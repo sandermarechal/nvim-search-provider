@@ -4,5 +4,5 @@
     "name": "Nvim Search Provider",
     "url": "https://github.com/sandermarechal/nvim-search-provider/",
     "description": "Search for nvim projects",
-    "version": 1
+    "version": 2
 }
