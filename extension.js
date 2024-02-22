@@ -231,7 +231,7 @@ function init (meta) {
 
 function enable () {
     if (!provider) {
-        provider = new nvimSearchProvider();
+        provider = new NvimSearchProvider();
         SearchResults._registerProvider(provider);
         log('nvim extension enabled');
     }
