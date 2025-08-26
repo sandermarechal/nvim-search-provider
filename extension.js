@@ -20,20 +20,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const Main = imports.ui.main;
-const Clutter = imports.gi.Clutter;
-const GLib = imports.gi.GLib;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
-const Search = imports.ui.search;
-const Shell = imports.gi.Shell;
-const St = imports.gi.St;
-const Params = imports.misc.params;
-const Util = imports.misc.util;
-const FileUtils = imports.misc.fileUtils;
-const IconGrid = imports.ui.iconGrid;
-const Signals = imports.signals;
-const SearchResults = Main.overview._overview._controls._searchController._searchResults;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
+import Gtk from 'gi://Gtk';
+import Shell from 'gi://Shell';
+import St from 'gi://St';
+import * as Util from 'resource:///org/gnome/shell/misc/util.js';
+import * as Search from 'resource:///org/gnome/shell/ui/search.js';
 
 let provider = null;
 
@@ -44,7 +39,7 @@ var NvimSearchProvider = class NvimSearchProvider_SearchProvider {
         this.id = 'nvim';
         this._projects = [];
 
-        let path = GLib.build_filenamev([GLib.get_home_dir(), 'dev', 'local']);
+        let path = GLib.build_filenamev([GLib.get_home_dir(), 'dev']);
         let dir = Gio.file_new_for_path(path);
         let monitor = dir.monitor_directory(Gio.FileMonitorFlags.NONE, null);
         monitor.connect('changed', (monitor, file, other_file, type) => {
@@ -146,19 +141,26 @@ var NvimSearchProvider = class NvimSearchProvider_SearchProvider {
     createResultObject(metaInfo, terms) {
         metaInfo.createIcon = (size) => {
             let box = new St.BoxLayout();
-            let gicon = Gio.icon_new_for_string('/opt/nvim-linux64/share/icons/hicolor/128x128/apps/nvim.png');
-            let icon = new St.Icon({ gicon });
+            let gicon = Gio.icon_new_for_string('/opt/nvim-linux-x86_64/share/icons/hicolor/128x128/apps/nvim.png');
+            let scale_factor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
+            let icon = new St.Icon({ gicon: gicon, icon_size: size / scale_factor });
 
             box.add_child(icon);
 
             return box;
         };
 
-        return new Search.GridSearchResult(provider, metaInfo, SearchResults);
+        return new Search.GridSearchResult(provider, metaInfo, Main.overview.searchController._searchResults);
     }
 
     filterResults(results, max) {
         return results.slice(0, max);
+    }
+
+    _wrapText(str, maxWidth) {
+        return str.replace(
+            new RegExp(`(?![^\\n]{1,${maxWidth}}$)([^\\n]{1,${maxWidth}})\\s`, 'g'),
+            '$1\n');
     }
 
     async getResultMetas(ids, cancellable) {
@@ -171,7 +173,7 @@ var NvimSearchProvider = class NvimSearchProvider_SearchProvider {
             if (project != null) {
                 metas.push({
                     id: id,
-                    name: project.name,
+                    name: this._wrapText(project.name, 15),
                     path: project.path
                 });
             } else {
@@ -226,21 +228,20 @@ var NvimSearchProvider = class NvimSearchProvider_SearchProvider {
     }
 };
 
-function init (meta) {
-}
-
-function enable () {
-    if (!provider) {
-        provider = new NvimSearchProvider();
-        SearchResults._registerProvider(provider);
-        log('nvim extension enabled');
+export default class NvimSearchProviderExtension {
+    enable () {
+        if (!provider) {
+            provider = new NvimSearchProvider();
+            Main.overview.searchController.addProvider(provider);
+            log('nvim extension enabled');
+        }
     }
-}
 
-function disable() {
-    if (provider) {
-        SearchResults._unregisterProvider(provider);
-        provider._nvimMonitor.cancel();
-        provider = null;
+    disable() {
+        if (provider) {
+            Main.overview.searchController.removeProvider(provider);
+            provider._nvimMonitor.cancel();
+            provider = null;
+        }
     }
 }
