@@ -188,7 +188,7 @@ var NvimSearchProvider = class NvimSearchProvider_SearchProvider {
         let project = this._findProject(id);
 
         if (project != null) {
-            Util.spawn(['/bin/bash', '-c', 'cd ' + project.path + ' && alacritty --class Neovim --title "Neovim ' + project.name + '" -e ~/.local/bin/nvim']);
+            Util.spawn(['/bin/zsh', '-c', 'cd ' + project.path + ' && alacritty --class Neovim --title "Neovim ' + project.name + '" -e ~/.local/bin/nvim']);
         } else {
             log("failed to find project with id: " + id);
         }
